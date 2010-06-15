@@ -144,6 +144,12 @@ int				filter = 0;				// Scaling/Scanline routine.
 
 int			bpp = 0; // BPP -> 8,16 or 32. 0 = autodetect (default)
 
+int	    	frameskip  			= 0;   // Frameskip
+int		 	Fullscreen = 0;
+int		 	Autoskip = 0; // Autoskip
+int	 	    Throttle  = 1;  // Throttle to 60FPS
+int		 	framecounter = 0; // FPS Counter
+
 #ifdef USE_GOOMBA
 #include <goomba/control.h>
 #include <goomba/gui.h>
@@ -347,9 +353,8 @@ void handy_sdl_rom_info(void)
 	}
 
 }
-void handy_sdl_quit(void)
+void handy_sdl_stop_game(void)
 {
-
 	// Disable audio and set emulation to pause, then quit :)
     SDL_PauseAudio(1);
 	emulation   = -1;
@@ -360,6 +365,11 @@ void handy_sdl_quit(void)
 
 	//Let is give some free memory
     free(mpLynxBuffer);
+}
+
+void handy_sdl_quit(void)
+{
+	handy_sdl_stop_game();
 
 	// Destroy SDL Surface's
 	SDL_FreeSurface(HandyBuffer);
@@ -369,24 +379,146 @@ void handy_sdl_quit(void)
 	SDL_QuitSubSystem(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
 	SDL_Quit();
 	exit(EXIT_SUCCESS);
+}
 
+int handy_run_game( void ) {
+	SDL_Event	handy_sdl_event;
+	Uint32  	handy_sdl_start_time;
+	Uint32  	handy_sdl_this_time;
+	float   	fps_counter;
+	int		 	Skipped = 0;
+
+	// Primary initalise of Handy
+	printf("Initialising Handy Core...    ");
+		try {
+		// Ugh, hardcoded lynxboot.img. Will be fixed in future versions.
+#ifdef USE_GOOMBA
+		mpLynx = new CSystem( menu_rom_name, "lynxboot.img");
+#else
+		mpLynx = new CSystem( argv[1], "lynxboot.img");
+#endif
+	} catch (CLynxException &err) {
+		cerr << err.mMsg.str() << ": " << err.mDesc.str() << endl;
+		exit(EXIT_FAILURE);
+	}
+	printf("[DONE]\n\n");
+
+	// Query Rom Image information
+	handy_sdl_rom_info();
+
+	// Initialise Handy/SDL audio
+	printf("\nInitialising SDL Audio...     ");
+	if(handy_sdl_audio_init())
+	{
+		gAudioEnabled = TRUE;
+	}
+	printf("[DONE]\n");
+
+
+	// Setup of Handy Core video
+	handy_sdl_video_init(mpBpp);
+
+
+	handy_sdl_start_time = SDL_GetTicks();
+
+	printf("Starting Lynx Emulation...\n");
+	while(!emulation)
+	{
+		// Initialise Handy button events
+		int OldKeyMask, KeyMask = mpLynx->GetButtonData();
+		OldKeyMask = KeyMask;
+
+		// Getting events for keyboard and/or joypad handling
+		while(SDL_PollEvent(&handy_sdl_event))
+		{
+			switch(handy_sdl_event.type)
+			{
+				case SDL_KEYUP:
+					KeyMask = handy_sdl_on_key_up(handy_sdl_event.key, KeyMask);
+					break;
+				case SDL_KEYDOWN:
+					KeyMask = handy_sdl_on_key_down(handy_sdl_event.key, KeyMask);
+					break;
+				default:
+					KeyMask = 0;
+					break;
+			}
+		}
+
+		// Checking if we had SDL handling events and then we'll update the Handy button events.
+		if (OldKeyMask != KeyMask)
+			mpLynx->SetButtonData(KeyMask);
+
+		// Update TimerCount
+		gTimerCount++;
+
+		while( handy_sdl_update()  )
+		{
+			if(!gSystemHalt)
+			{
+				for(ULONG loop=1024;loop;loop--)
+				{
+					mpLynx->Update();
+				}
+			}
+			else
+			{
+#ifdef HANDY_SDL_DEBUG
+					printf("gSystemHalt : %d\n", gSystemHalt);
+#endif
+					gTimerCount++;
+			}
+		}
+
+		handy_sdl_this_time = SDL_GetTicks();
+
+		fps_counter = (((float)gTimerCount/(handy_sdl_this_time-handy_sdl_start_time))*1000.0);
+#ifdef HANDY_SDL_DEBUG
+		printf("fps_counter : %f\n", fps_counter);
+#endif
+
+		if( (Throttle) && (fps_counter > 59.99) ) SDL_Delay( (Uint32)fps_counter );
+
+		if(Autoskip)
+		{
+        	if(fps_counter > 60)
+			{
+                frameskip--;
+       			Skipped = frameskip;
+            }
+			else
+			{
+				if(fps_counter < 60)
+				{
+               		Skipped++;
+               		frameskip++;
+               	}
+            }
+        }
+
+
+		if ( framecounter )
+		{
+
+			if ( handy_sdl_this_time != handy_sdl_start_time )
+			{
+				static char buffer[256];
+
+				sprintf (buffer, "Handy %0.0f", fps_counter);
+				strcat( buffer, "FPS");
+				SDL_WM_SetCaption( buffer , "HANDY" );
+			}
+		}
+
+
+	}
+
+	return 0;
 }
 
 int main(int argc, char *argv[])
 {
 	int 		i;
-	int	    	frameskip  			= 0;   // Frameskip
-	SDL_Event	handy_sdl_event;
-	Uint32  	handy_sdl_start_time;
-	Uint32  	handy_sdl_this_time;
-	float   	fps_counter;
-	int	 	    Throttle  = 1;  // Throttle to 60FPS
-	int		 	framecounter = 0; // FPS Counter
-	int		 	Skipped = 0;
-	int		 	Fullscreen = 0;
-	int		 	Autoskip = 0; // Autoskip
-
-
 	int		    fsaa = 0;   // OpenGL FSAA (default off)
 	int			accel = 1;  // OpenGL Hardware accel (default on)
 	int         sync  = 0;  // OpenGL VSYNC (default off)
@@ -652,131 +784,8 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	// Primary initalise of Handy
-	printf("Initialising Handy Core...    ");
-		try {
-		// Ugh, hardcoded lynxboot.img. Will be fixed in future versions.
-#ifdef USE_GOOMBA
-		mpLynx = new CSystem( menu_rom_name, "lynxboot.img");
-#else
-		mpLynx = new CSystem( argv[1], "lynxboot.img");
-#endif
-	} catch (CLynxException &err) {
-		cerr << err.mMsg.str() << ": " << err.mDesc.str() << endl;
-		exit(EXIT_FAILURE);
-	}
-	printf("[DONE]\n\n");
-
-	// Query Rom Image information
-	handy_sdl_rom_info();
-
-	// Initialise Handy/SDL audio
-	printf("\nInitialising SDL Audio...     ");
-	if(handy_sdl_audio_init())
-	{
-		gAudioEnabled = TRUE;
-	}
-	printf("[DONE]\n");
-
-
-	// Setup of Handy Core video
-	handy_sdl_video_init(mpBpp);
-
-
-	handy_sdl_start_time = SDL_GetTicks();
-
-	printf("Starting Lynx Emulation...\n");
-	while(!emulation)
-	{
-		// Initialise Handy button events
-		int OldKeyMask, KeyMask = mpLynx->GetButtonData();
-		OldKeyMask = KeyMask;
-
-		// Getting events for keyboard and/or joypad handling
-		while(SDL_PollEvent(&handy_sdl_event))
-		{
-			switch(handy_sdl_event.type)
-			{
-				case SDL_KEYUP:
-					KeyMask = handy_sdl_on_key_up(handy_sdl_event.key, KeyMask);
-					break;
-				case SDL_KEYDOWN:
-					KeyMask = handy_sdl_on_key_down(handy_sdl_event.key, KeyMask);
-					break;
-				default:
-					KeyMask = 0;
-					break;
-			}
-		}
-
-		// Checking if we had SDL handling events and then we'll update the Handy button events.
-		if (OldKeyMask != KeyMask)
-			mpLynx->SetButtonData(KeyMask);
-
-		// Update TimerCount
-		gTimerCount++;
-
-		while( handy_sdl_update()  )
-		{
-			if(!gSystemHalt)
-			{
-				for(ULONG loop=1024;loop;loop--)
-				{
-					mpLynx->Update();
-				}
-			}
-			else
-			{
-#ifdef HANDY_SDL_DEBUG
-					printf("gSystemHalt : %d\n", gSystemHalt);
-#endif
-					gTimerCount++;
-			}
-		}
-
-		handy_sdl_this_time = SDL_GetTicks();
-
-		fps_counter = (((float)gTimerCount/(handy_sdl_this_time-handy_sdl_start_time))*1000.0);
-#ifdef HANDY_SDL_DEBUG
-		printf("fps_counter : %f\n", fps_counter);
-#endif
-
-		if( (Throttle) && (fps_counter > 59.99) ) SDL_Delay( (Uint32)fps_counter );
-
-		if(Autoskip)
-		{
-        	if(fps_counter > 60)
-			{
-                frameskip--;
-       			Skipped = frameskip;
-            }
-			else
-			{
-				if(fps_counter < 60)
-				{
-               		Skipped++;
-               		frameskip++;
-               	}
-            }
-        }
-
-
-		if ( framecounter )
-		{
-
-			if ( handy_sdl_this_time != handy_sdl_start_time )
-			{
-				static char buffer[256];
-
-				sprintf (buffer, "Handy %0.0f", fps_counter);
-				strcat( buffer, "FPS");
-				SDL_WM_SetCaption( buffer , "HANDY" );
-			}
-		}
-
-
-	}
-
+	handy_run_game();
+	
 	return 0;
 }
 
