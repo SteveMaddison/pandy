@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PXML xmlns="http://openpandora.org/namespaces/PXML" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PXML_schema.xsd">
+  <application id="handy.cosam.0.5.0.0" appdata="handy">
+    <title lang="en_US">Handy</title>
+    <description lang="en_US">Atari Lynx emulator.</description>
+    <author name="Steve Maddison" website="http://www.cosam.org/"/>
+    
+    <exec command="handy.sh"/>
+    <version major="0" minor="5" release="0" build="0"/>
+    
+    <icon src="lynx.png"/>
+ 
+    <categories>
+      <category name="Game">
+        <subcategory name="Emulator"/>
+      </category>
+    </categories>
+  </application>
+</PXML>
