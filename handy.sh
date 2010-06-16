@@ -15,5 +15,6 @@ if [ ! -f ./$BIOS ] ; then
 	fi
 fi
 
+export LD_LIBRARY_PATH=.
 ./handy_sdl
 

@@ -420,6 +420,10 @@ int handy_run_game( void )	{
 	}
 #endif
 
+	if( gAudioEnabled ) {
+		SDL_PauseAudio(0);
+	}
+
 	handy_sdl_start_time = SDL_GetTicks();
 	handy_sdl_suspend_time = 0;
 
@@ -480,7 +484,9 @@ int handy_run_game( void )	{
 		}
 		else if( suspend ) {
 			Uint32 suspend_ticks = SDL_GetTicks();
-			SDL_PauseAudio(1);
+			if( gAudioEnabled ) {
+				SDL_PauseAudio(1);
+			}
 			
 			/* Do stuff here. */
 			goomba_gui_start( menu_gui, mainSurface );
@@ -687,8 +693,6 @@ int	main(int argc, char	*argv[])
 	goomba_item_append_child( menu_main, menu_main_back );
 	menu_main_back->text = "Return to Game";
 
-	goomba_gui_dump( menu_gui );
-	
 	*rom_file = 0;
 	if( argc >= 2 ) {
 		strncpy( rom_file, argv[1], ROM_FILE_LEN );
