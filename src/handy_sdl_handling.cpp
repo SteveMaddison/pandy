@@ -117,7 +117,7 @@ int  handy_sdl_set_key( int ctrl, int key ) {
 
 int  handy_sdl_on_key_down(SDL_KeyboardEvent key, int mask)
 {
-	Sint16 x_move = 0, y_move = 0;
+//	Sint16 x_move = 0, y_move = 0;
 	
 /*    
     if(joy) {
@@ -145,14 +145,12 @@ int  handy_sdl_on_key_down(SDL_KeyboardEvent key, int mask)
 	else if( key.keysym.sym == controls[HANDY_CTRL_OPTION2] ) 
 		mask|= BUTTON_OPT2;
 #ifdef USE_GOOMBA
-	else if( key.keysym.sym == controls[HANDY_CTRL_MENU] ) {
-		/* Display menu */
-		goomba_gui_start( menu_gui, mainSurface );
-	}
+	else if( key.keysym.sym == controls[HANDY_CTRL_MENU] )
+		suspend = 1; /* Display menu */
 #endif
     else if( key.keysym.sym == controls[HANDY_CTRL_QUIT] )
-       handy_sdl_quit();
-
+       quit = 1;
+	
 /*    
     if(joy) {
     if(x_move > 32768/2)
@@ -188,7 +186,7 @@ int  handy_sdl_on_key_down(SDL_KeyboardEvent key, int mask)
 
 int  handy_sdl_on_key_up(SDL_KeyboardEvent key, int mask)
 {
-	Sint16 x_move = 0, y_move = 0;
+//	Sint16 x_move = 0, y_move = 0;
 	
 //  Uint8 *keystate = SDL_GetKeyState(NULL); // First to initialize the keystates
 //	int mod = SDL_GetModState();
@@ -199,7 +197,6 @@ int  handy_sdl_on_key_up(SDL_KeyboardEvent key, int mask)
 		y_move = SDL_JoystickGetAxis(joystick, 1);
     }
 */  
-
 
     if( key.keysym.sym == controls[HANDY_CTRL_LEFT] )
 		mask &= ~BUTTON_LEFT;
@@ -220,7 +217,7 @@ int  handy_sdl_on_key_up(SDL_KeyboardEvent key, int mask)
 	else if( key.keysym.sym == controls[HANDY_CTRL_OPTION2] ) 
 		mask &= ~BUTTON_OPT2;
 	else if( key.keysym.sym == controls[HANDY_CTRL_QUIT] ) 
-       handy_sdl_quit();				
+       quit = 1;				
 
 /*    
     if(joy) {

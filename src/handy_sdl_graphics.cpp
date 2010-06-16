@@ -91,8 +91,8 @@ int handy_sdl_video_setup(int rendertype, int fsaa, int fullscreen, int bpp, int
 			Uint32			 videoflags;
 			int 			 value;
 			int				 sdl_bpp_flag;
-			int				 surfacewidth = 640;
-			int				 surfaceheight = 480;
+			int				 surfacewidth;
+			int				 surfaceheight;
 
 	// Since we first checked the rotation, based upon that information
 	// We setup the width and height of the display.
@@ -211,6 +211,9 @@ int handy_sdl_video_setup(int rendertype, int fsaa, int fullscreen, int bpp, int
 #endif
 
 	// Setup the main SDL surface
+	if( mainSurface != NULL )
+		SDL_FreeSurface( mainSurface );
+		
 	mainSurface = SDL_SetVideoMode(surfacewidth, surfaceheight, sdl_bpp_flag, videoflags);
 
 	if (mainSurface == NULL)
@@ -223,6 +226,9 @@ int handy_sdl_video_setup(int rendertype, int fsaa, int fullscreen, int bpp, int
 	//
 	// All the rendering is done in the graphics buffer and is then
 	// blitted to the mainSurface and thus to the screen.
+	if( HandyBuffer != NULL )
+		SDL_FreeSurface( HandyBuffer );
+
 	HandyBuffer = SDL_CreateRGBSurface(SDL_HWSURFACE,
 		LynxWidth,
 		LynxHeight,
@@ -475,7 +481,7 @@ UBYTE *handy_sdl_display_callback(ULONG objref)
 			break;
 #endif
 		case 3:
-			sdlemu_draw_overlay( HandyBuffer, LynxScale, LynxWidth, LynxHeight);
+            sdlemu_draw_overlay( HandyBuffer, LynxScale, LynxWidth, LynxHeight);
 		default:
 			handy_sdl_draw_graphics();
 			break;

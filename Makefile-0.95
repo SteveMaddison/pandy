@@ -49,15 +49,15 @@ LD         = gcc
 TARGET     = handy_sdl
 
 # Note that we use optimization level 2 instead of 3--3 doesn't seem to gain much over 2
-CFLAGS   = -MMD -Wall -Wno-switch -O4 -D$(SYSTYPE) -DPANDORA -DUSE_GOOMBA -DANSI_GCC -DSDL_PATCH -ffast-math -fomit-frame-pointer `sdl-config --cflags` 
-CPPFLAGS = -MMD -Wall -Wno-switch -Wno-non-virtual-dtor -O4 -D$(SYSTYPE) -DPANDORA -DUSE_GOOMBA -DANSI_GCC -DSDL_PATCH \
+CFLAGS   = -MMD -Wall -Wno-switch -O4 -D$(SYSTYPE) -DANSI_GCC -DSDL_PATCH -DUSE_GOOMBA -DNOGL -DPANDORA -ffast-math -fomit-frame-pointer `sdl-config --cflags` 
+CPPFLAGS = -MMD -Wall -Wno-switch -Wno-non-virtual-dtor -O4 -D$(SYSTYPE) -DANSI_GCC -DSDL_PATCH -DUSE_GOOMBA -DNOGL -DPANDORA\
 		-ffast-math -fomit-frame-pointer `sdl-config --cflags` -g \
 #		-fomit-frame-pointer `sdl-config --cflags` -g
 #		-fomit-frame-pointer `sdl-config --cflags` -DLOG_UNMAPPED_MEMORY_ACCESSES
 
 LDFLAGS =
 
-LIBS = -L/usr/local/lib -L/usr/lib `sdl-config $(SDLLIBTYPE)` -lgoomba -lstdc++ -lz $(GLLIB)
+LIBS = -L/usr/local/lib -L/usr/lib `sdl-config $(SDLLIBTYPE)` -lstdc++ -lz -lgoomba $(GLLIB)
 
 INCS = -I./src -I./src/handy-0.95 -I./src/sdlemu -I/usr/local/include -I/usr/include
 

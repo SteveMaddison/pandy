@@ -62,7 +62,7 @@
 #include <SDL.h>
 #include <SDL_main.h>
 #include <SDL_timer.h>
- 
+
 enum handy_ctrl {
 	HANDY_CTRL_UP,
 	HANDY_CTRL_DOWN,

@@ -89,8 +89,14 @@ extern int              filter;					// Output Filter
 extern Uint32           overlay_format;         // YUV Overlay format
 extern Uint8  		   *delta;
 
+extern int 				suspend;				// Used to temporarily suspend emulatoion.
+extern int 				stop;					// Used to stop the current game.
+extern int 				quit;					// Used to quit the emulator completely.
+
 inline	int 	handy_sdl_update(void);
 		void 	handy_sdl_rom_info(void);
 		int 	main(int argc, char *argv[]);
 		void	handy_sdl_quit(void);
+		int		handy_run_game(void);
+		void	handy_stop_game(void);
 #endif

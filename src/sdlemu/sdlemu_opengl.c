@@ -556,5 +556,4 @@ void sdlemu_create_texture(SDL_Surface * src, SDL_Surface * dst, int filter, int
 	}    
 }    
 
-#endif /* NOGL */
-
+#endif
