@@ -9,6 +9,9 @@
     <version major="0" minor="5" release="0" build="0"/>
     
     <icon src="lynx.png"/>
+    <previewpics>
+      <pic src="preview.png"/>
+    </previewpics>
  
     <categories>
       <category name="Game">
