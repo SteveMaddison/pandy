@@ -22,14 +22,19 @@ LD         = $(HOST)-gcc
 STRIP      = $(HOST)-strip
 TARGET     = handy_sdl
 
+PND_FILES  = FreeSans.ttf handy_sdl handy.sh lynxboot.md5 lynx.png \
+		preview.png PXML.xml $(PREFIX)/usr/lib/libgoomba.so
+
 # Note that we use optimization level 2 instead of 3--3 doesn't seem to gain much over 2
-CFLAGS   = -MMD -DPANDORA -DNOGL -DUSE_GOOMBA -Wall -Wno-switch -O4 -D$(SYSTYPE) -DANSI_GCC -DSDL_PATCH -ffast-math -fomit-frame-pointer  -mcpu=cortex-a8 -mfpu=neon -ftree-vectorize -mfloat-abi=softfp -ffast-math -fsingle-precision-constant -fno-inline -I/usr/include -I/usr/include/SDL 
-CPPFLAGS = -MMD -DPANDORA -DNOGL -DUSE_GOOMBA -Wall -Wno-switch -Wno-non-virtual-dtor -O4 -D$(SYSTYPE) -DANSI_GCC -DSDL_PATCH \
-		-ffast-math -fomit-frame-pointer -fno-inline \
-		-mcpu=cortex-a8 -mfpu=neon -ftree-vectorize -mfloat-abi=softfp  \
-              -ffast-math -fsingle-precision-constant -I/usr/include -I/usr/include/SDL
-#		-fomit-frame-pointer `sdl-config --cflags` -g
-#		-fomit-frame-pointer `sdl-config --cflags` -DLOG_UNMAPPED_MEMORY_ACCESSES
+CFLAGS   = -MMD -DPANDORA -DNOGL -DUSE_GOOMBA -Wall -Wno-switch -O4 -D$(SYSTYPE) -DANSI_GCC \
+	-DSDL_PATCH -ffast-math -fomit-frame-pointer -mcpu=cortex-a8 -mfpu=neon -ftree-vectorize \
+	-mfloat-abi=softfp -fsingle-precision-constant -fno-inline -I/usr/include -I/usr/include/SDL 
+CPPFLAGS = -MMD -DPANDORA -DNOGL -DUSE_GOOMBA -Wall -Wno-switch -Wno-non-virtual-dtor -O4 \
+	-D$(SYSTYPE) -DANSI_GCC -DSDL_PATCH -ffast-math -fomit-frame-pointer -fno-inline \
+	-mcpu=cortex-a8 -mfpu=neon -ftree-vectorize -mfloat-abi=softfp -fsingle-precision-constant \
+	-I/usr/include -I/usr/include/SDL
+#	-fomit-frame-pointer `sdl-config --cflags` -g
+#	-fomit-frame-pointer `sdl-config --cflags` -DLOG_UNMAPPED_MEMORY_ACCESSES
 
 LDFLAGS =
 
@@ -138,10 +143,9 @@ $(TARGET)$(EXESUFFIX): $(OBJS)
 
 pnd: handy.pnd
 
-handy.pnd: all
+handy.pnd: $(PND_FILES)
 	mkdir -p pnd
-	cp -f FreeSans.ttf handy_sdl handy.sh lynxboot.md5 lynx.png \
-		preview.png PXML.xml $(PREFIX)/usr/lib/libgoomba.so pnd/
+	cp -f $(PND_FILES) pnd/
 	mkisofs -o handy.iso -R pnd
 	cat handy.iso PXML.xml lynx.png > handy.pnd
 
