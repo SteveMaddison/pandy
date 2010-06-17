@@ -168,7 +168,6 @@ int             filter = 0;             // Scaling/Scanline routine.
 struct goomba_gui *menu_gui = NULL;
 
 struct goomba_item *menu_main = NULL;
-struct goomba_item *menu_main_back = NULL;
 
 /* ROM selector */
 struct goomba_item *menu_rom = NULL;
@@ -179,7 +178,6 @@ struct goomba_item *menu_frameskip = NULL;
 struct goomba_item *menu_showfps = NULL;
 struct goomba_item *menu_lcd = NULL;
 struct goomba_item *menu_filter = NULL;
-struct goomba_item *menu_video_back = NULL;
 
 /* Sound options */
 struct goomba_item *menu_sound = NULL;
@@ -188,7 +186,6 @@ struct goomba_item *menu_sound = NULL;
 struct goomba_item *menu_controls = NULL;
 struct goomba_item *menu_ctrl_option[HANDY_NUM_CTRLS];
 struct goomba_control menu_ctrl[HANDY_NUM_CTRLS];
-struct goomba_item *menu_controls_back = NULL;
 
 char menu_rom_name[MENU_ROM_NAME_LEN];
 
@@ -582,13 +579,17 @@ int main(int argc, char *argv[])
 	menu_gui->root = menu_main;
 	menu_gui->config.font.name = "FreeSans.ttf";
 	menu_gui->config.font.size = 20;
+	menu_gui->config.help = 1;
 	
 	menu_gui->config.selector.fill.red = 255;
 	menu_gui->config.selector.fill.green = 192;
 	menu_gui->config.selector.fill.blue = 0;
 	menu_gui->config.selector.alpha = 192;
 #ifdef PANDORA
+	menu_gui->config.control[GOOMBA_EVENT_SKIP_F].value = SDLK_RCTRL;
+	menu_gui->config.control[GOOMBA_EVENT_SKIP_B].value = SDLK_RSHIFT;
 	menu_gui->config.control[GOOMBA_EVENT_SELECT].value = SDLK_END;
+	menu_gui->config.control[GOOMBA_EVENT_BACK].value = SDLK_PAGEDOWN;
 #endif
 
 	/* ROM Selector */
@@ -655,11 +656,6 @@ int main(int argc, char *argv[])
 	goomba_add_enum_option( menu_filter, "SuperEagle", 4 );
 	goomba_add_enum_option( menu_filter, "TV Mode", 1 );
 
-	/* Video: return to main menu */
-	menu_video_back = goomba_item_create( GOOMBA_ITEM_ACTION );
-	goomba_item_append_child( menu_video, menu_video_back );
-	menu_video_back->text = "Return to Main Menu";
-
 	/* Sound options */
 	menu_sound = goomba_item_create( GOOMBA_ITEM_ENUM );
 	goomba_item_append_child( menu_main, menu_sound );
@@ -682,16 +678,6 @@ int main(int argc, char *argv[])
 		menu_ctrl_option[i]->callback = menu_control_callback;
 		goomba_item_append_child( menu_controls, menu_ctrl_option[i] );
 	}
-
-	/* Controls: return to main menu */
-	menu_controls_back = goomba_item_create( GOOMBA_ITEM_ACTION );
-	goomba_item_append_child( menu_controls, menu_controls_back );
-	menu_controls_back->text = "Return to Main Menu";
-
-	/* Main menu: return to emulator */
-	menu_main_back = goomba_item_create( GOOMBA_ITEM_ACTION );
-	goomba_item_append_child( menu_main, menu_main_back );
-	menu_main_back->text = "Return to Game";
 
 	*rom_file = 0;
 	if( argc >= 2 ) {

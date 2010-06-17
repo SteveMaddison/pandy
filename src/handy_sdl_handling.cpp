@@ -78,7 +78,7 @@ static int controls[HANDY_NUM_CTRLS] = {
 	SDLK_F2,		/* Option 2 */
 	SDLK_RETURN,	/* Pause */
 #ifdef USE_GOOMBA
-	SDLK_m,			/* Menu */
+	SDLK_TAB,		/* Menu */
 #endif
 	SDLK_ESCAPE		/* Quit */
 #else /* ifndef PANDORA */
