@@ -59,6 +59,7 @@
 #include <cstring>
 #include <ctime>
 #include <cctype>
+#include <errno.h>
 #include <SDL.h>
 #include <SDL_main.h>
 #include <SDL_timer.h>
@@ -165,6 +166,8 @@ int             filter = 0;             // Scaling/Scanline routine.
 
 #define MENU_ROM_NAME_LEN 256
 
+char *config_file = "handy.cfg";
+
 struct goomba_gui *menu_gui = NULL;
 
 struct goomba_item *menu_main = NULL;
@@ -187,11 +190,34 @@ struct goomba_item *menu_controls = NULL;
 struct goomba_item *menu_ctrl_option[HANDY_NUM_CTRLS];
 struct goomba_control menu_ctrl[HANDY_NUM_CTRLS];
 
-char menu_rom_name[MENU_ROM_NAME_LEN];
+char menu_rom_name[MENU_ROM_NAME_LEN] = "";
+char menu_rom_dir[MENU_ROM_NAME_LEN] = "";
 
 const char *menu_ctrl_name[HANDY_NUM_CTRLS] = {
 	"Up", "Down", "Left", "Right", "A", "B",
-	"Option 1", "Option 2", "Pause", "Menu", "Quit"
+	"Option1", "Option2", "Pause", "Menu", "Quit"
+};
+
+typedef enum {
+	CONFIG_ROMDIR,
+	CONFIG_VIDEO,
+	CONFIG_VIDEO_FRAMESKIP,
+	CONFIG_VIDEO_FPS,	
+	CONFIG_VIDEO_LCD,
+	CONFIG_VIDEO_FILTER,
+	CONFIG_SOUND,
+	CONFIG_CONTROL
+};
+
+const char *config_name[] = {
+	"romdir",
+	"video",
+	"frameskip",
+	"fps",
+	"lcd",
+	"filter",
+	"sound",
+	"control"
 };
 
 int menu_rom_callback( struct goomba_item *item ) {
@@ -229,6 +255,134 @@ int menu_control_callback( struct goomba_item *item ) {
 	}
 	return 0;
 }
+
+int handy_config_read_item( char *name, char *subname, char *value ) {
+	if( strcmp( name, config_name[CONFIG_ROMDIR] ) == 0 ) {
+		if( value && *value ) {
+			strncpy( menu_rom_dir, value, MENU_ROM_NAME_LEN );
+		}
+	}
+	else if( strcmp( name, config_name[CONFIG_VIDEO] ) == 0 ) {
+		if( strcmp( subname, config_name[CONFIG_VIDEO_FRAMESKIP] ) == 0 ) {
+			*(menu_frameskip->enum_data.value) = atoi( value );
+		}
+		else if( strcmp( subname, config_name[CONFIG_VIDEO_FPS] ) == 0 ) {
+			*(menu_showfps->enum_data.value) = atoi( value );
+		}
+		else if( strcmp( subname, config_name[CONFIG_VIDEO_LCD] ) == 0 ) {
+			*(menu_lcd->enum_data.value) = atoi( value );
+		}
+		else if( strcmp( subname, config_name[CONFIG_VIDEO_FILTER] ) == 0 ) {
+			*(menu_filter->enum_data.value) = atoi( value );
+		}
+		else {
+			fprintf( stderr, "Unrecognised config item '%s.%s'.\n", name, subname );
+			return -1;
+		}
+	}
+	else if( strcmp( name, config_name[CONFIG_SOUND] ) == 0 ) {
+		if( value && *value == '1' ) {
+			gAudioEnabled = TRUE;
+		}
+		else {
+			gAudioEnabled = FALSE;		
+		}
+	}
+	else if( strcmp( name, config_name[CONFIG_CONTROL] ) == 0 ) {
+		int i;
+		int match = 0;
+		for( i = 0 ; i < HANDY_NUM_CTRLS ; i++ ) {
+			if( strcmp( subname, menu_ctrl_name[i] ) == 0 ) {
+				menu_ctrl_option[i]->control_data.control->value = atoi( value );
+				match = 1;
+			}
+		}
+		if( !match ) {
+			fprintf( stderr, "Unrecognised config item '%s.%s'.\n", name, subname );
+			return -1;
+		}
+	}
+	else {
+		fprintf( stderr, "Unrecognised config item '%s'.\n", name );
+		return -1;
+	}
+	
+	return 0;
+}
+
+int handy_config_read( void ) {
+	FILE *file = fopen( config_file, "r" );
+
+	if( file == NULL ) {
+		fprintf( stderr, "Couldn't open %s for input: %s\n", config_file, strerror(errno) );
+		return -1;
+	}
+	else {
+		char line[128];
+		char *name = NULL;
+		char *value;
+		char *subname = NULL;
+		
+		while( fgets( line, 128, file ) != NULL ) {
+			line[strlen(line)-1] = 0; /* Trim newline. */
+			name = &line[0];
+			value = strchr( line, '=' );
+			
+			if( value ) {
+				*value = 0;
+				value++; /* Point past '=' sign. */
+				subname = strchr( name, '.' );
+				if( subname ) {
+					*subname = 0;
+					subname++; /* Point past '.' separator. */
+				}
+				handy_config_read_item( name, subname, value );
+			}
+		}
+		
+		fclose( file );
+	}
+	
+	return 0;
+}
+
+int handy_config_write( void ) {
+	FILE *file = fopen( config_file, "w" );
+	
+	if( file == NULL ) {
+		fprintf( stderr, "Couldn't open %s for output: %s\n", config_file, strerror(errno) );
+		return -1;
+	}
+	else {
+		char rom_dir[MENU_ROM_NAME_LEN];
+		char *slash = NULL;
+		int i;
+		
+		strncpy( rom_dir, menu_rom->filesel_data.value, MENU_ROM_NAME_LEN );
+		slash = strrchr( rom_dir, '/' );
+		if( slash && slash != &rom_dir[0] ) {
+			*slash = 0;
+		}
+		fprintf( file, "%s=%s\n", config_name[CONFIG_ROMDIR], rom_dir );
+		
+		fprintf( file, "%s.%s=%d\n", config_name[CONFIG_VIDEO], config_name[CONFIG_VIDEO_FRAMESKIP], *(menu_frameskip->enum_data.value) );
+		fprintf( file, "%s.%s=%d\n", config_name[CONFIG_VIDEO], config_name[CONFIG_VIDEO_FPS], *(menu_showfps->enum_data.value) );
+		fprintf( file, "%s.%s=%d\n", config_name[CONFIG_VIDEO], config_name[CONFIG_VIDEO_LCD], *(menu_lcd->enum_data.value) );
+		fprintf( file, "%s.%s=%d\n", config_name[CONFIG_VIDEO], config_name[CONFIG_VIDEO_FILTER], *(menu_filter->enum_data.value) );
+
+		fprintf( file, "%s=%d\n", config_name[CONFIG_SOUND], *(menu_sound->enum_data.value) );
+
+		for( i = 0 ; i < HANDY_NUM_CTRLS ; i++ ) {
+			fprintf( file, "%s.%s=%d\n", config_name[CONFIG_CONTROL],
+				menu_ctrl_name[i], menu_ctrl_option[i]->control_data.control->value	);
+		}
+
+		fclose( file );
+	}
+
+	return 0;
+}
+
 #endif /* USE_GOOMBA */
 
 
@@ -597,6 +751,7 @@ int main(int argc, char *argv[])
 	goomba_item_append_child( menu_main, menu_rom );
 	menu_rom->text = "Load ROM";
 	menu_rom->filesel_data.value = menu_rom_name;
+	menu_rom->filesel_data.directory = menu_rom_dir;
 	menu_rom->callback = menu_rom_callback;
 	menu_rom->filesel_data.size = MENU_ROM_NAME_LEN;
 	menu_rom->action = GOOMBA_ACTION_EXIT;
@@ -678,6 +833,8 @@ int main(int argc, char *argv[])
 		menu_ctrl_option[i]->callback = menu_control_callback;
 		goomba_item_append_child( menu_controls, menu_ctrl_option[i] );
 	}
+
+	handy_config_read();
 
 	*rom_file = 0;
 	if( argc >= 2 ) {
@@ -801,6 +958,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
+#ifdef USE_GOOMBA
+	// Ensure menu reflects current config values.
+	goomba_item_refresh( menu_gui->root );
+#endif
+
 	// Initalising SDL for Audio and Video support
 	printf("Initialising SDL...           ");
 	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO) < 0) {
@@ -830,6 +992,11 @@ int main(int argc, char *argv[])
 	// Close SDL Subsystems
 	SDL_QuitSubSystem(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
 	SDL_Quit();
+
+#ifdef USE_GOOMBA
+	handy_config_write();
+#endif
 	
 	return EXIT_SUCCESS;
 }
+
