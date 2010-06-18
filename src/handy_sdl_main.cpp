@@ -51,6 +51,10 @@
 //  but is rewritten from scratch because of lost sources (tm). The SDLemu  //
 //  team has tried to bring Handy/SDL v0.1 with al the functions from the   //
 //  closed source version.                                                  //
+//                                                                          //
+// June 2010 :                                                              //
+//  Pandora port with Goomba menu system by Steve Maddison.                 //
+//                                                                          //
 //////////////////////////////////////////////////////////////////////////////
 
 #include <cstdio>

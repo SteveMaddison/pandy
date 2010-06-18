@@ -2,6 +2,7 @@
 # Unified Makefile for Handy/SDL Portable Lynx Emulator
 #
 # by James L. Hammons
+# adpated for Pandora by Steve Maddison
 #
 # This software is licensed under the GPL v2 or any later version. Set the
 # file GPL.TXT for details. ;-)
@@ -22,8 +23,8 @@ LD         = $(HOST)-gcc
 STRIP      = $(HOST)-strip
 TARGET     = handy_sdl
 
-PND_FILES  = FreeSans.ttf handy_sdl handy.sh lynxboot.md5 lynx.png \
-		preview.png PXML.xml $(PREFIX)/usr/lib/libgoomba.so
+PND_FILES  = FreeSans.ttf README README.pandora gpl.txt handy_sdl handy.sh lynxboot.md5 \
+		lynx.png preview.png PXML.xml $(PREFIX)/usr/lib/libgoomba.so
 
 # Note that we use optimization level 2 instead of 3--3 doesn't seem to gain much over 2
 CFLAGS   = -MMD -DPANDORA -DNOGL -DUSE_GOOMBA -Wall -Wno-switch -O4 -D$(SYSTYPE) -DANSI_GCC \
@@ -94,6 +95,7 @@ clean:
 	@echo -n "*** Cleaning out the garbage..."
 	@rm -rf obj
 	@rm -f ./$(TARGET)$(EXESUFFIX)
+	@rm -rf pnd handy.iso handy.pnd
 	@echo done!
 
 obj:
